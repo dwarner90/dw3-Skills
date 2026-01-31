@@ -122,8 +122,7 @@ FROM rrf(
     text_search(security_spec, '<keywords>', content),
     join_key => 'path'
 )
-ORDER BY fused_score DESC
-LIMIT 5;" | spice sql
+ORDER BY fused_score DESC;" | spice sql
 \`\`\`
 
 ### Cloud Questions

@@ -126,8 +126,7 @@ FROM rrf(
     text_search(<dataset>, '<important keywords>', content),
     join_key => 'path'
 )
-ORDER BY fused_score DESC
-LIMIT 5;
+ORDER BY fused_score DESC;
 ```
 
 ### Best Practices for Queries
@@ -136,7 +135,6 @@ LIMIT 5;
 |-----------|----------|
 | **Semantic query** | Use natural language describing what you're looking for |
 | **Text keywords** | Include exact terms, acronyms, proper nouns, version numbers |
-| **Limit** | Start with 5 results; increase if needed |
 
 ### Examples
 
