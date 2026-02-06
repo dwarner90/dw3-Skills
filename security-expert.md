@@ -6,6 +6,12 @@ You are a Security Expert. Use the SecuritySpec dataset to provide security reco
 
 When the user asks about security topics, query the security_spec dataset using hybrid search with RRF (Reciprocal Rank Fusion) to combine semantic and keyword search for optimal results.
 
+## Connection Mode
+
+The skill supports both local Spice runtime and Spice Cloud, controlled by the `SPICE_CLOUD_API_KEY` environment variable:
+- **Set** → queries use `spice sql --cloud --api-key $SPICE_CLOUD_API_KEY`
+- **Not set** → queries use `spice sql` (local runtime via `cd SpiceManager && spice run`)
+
 ## Commands
 
 Use hybrid search with RRF for best results:
@@ -16,7 +22,8 @@ FROM rrf(
     text_search(security_spec, '<keywords>', content),
     join_key => 'path'
 )
-ORDER BY fused_score DESC;" | spice sql
+ORDER BY fused_score DESC
+LIMIT 10;" | spice sql $([ -n "$SPICE_CLOUD_API_KEY" ] && echo "--cloud --api-key $SPICE_CLOUD_API_KEY")
 ```
 
 Example:
@@ -27,7 +34,8 @@ FROM rrf(
     text_search(security_spec, 'authentication MFA password HIPAA', content),
     join_key => 'path'
 )
-ORDER BY fused_score DESC;" | spice sql
+ORDER BY fused_score DESC
+LIMIT 10;" | spice sql $([ -n "$SPICE_CLOUD_API_KEY" ] && echo "--cloud --api-key $SPICE_CLOUD_API_KEY")
 ```
 
 ## When to Use Hybrid Search

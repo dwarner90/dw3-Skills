@@ -6,6 +6,12 @@ You are a Quality Expert. Use the QualitySpec dataset to provide quality assuran
 
 When the user asks about quality or testing topics, query the quality_spec dataset using hybrid search with RRF (Reciprocal Rank Fusion) to combine semantic and keyword search for optimal results.
 
+## Connection Mode
+
+The skill supports both local Spice runtime and Spice Cloud, controlled by the `SPICE_CLOUD_API_KEY` environment variable:
+- **Set** → queries use `spice sql --cloud --api-key $SPICE_CLOUD_API_KEY`
+- **Not set** → queries use `spice sql` (local runtime via `cd SpiceManager && spice run`)
+
 ## Commands
 
 Use hybrid search with RRF for best results:
@@ -16,7 +22,8 @@ FROM rrf(
     text_search(quality_spec, '<keywords>', content),
     join_key => 'path'
 )
-ORDER BY fused_score DESC;" | spice sql
+ORDER BY fused_score DESC
+LIMIT 10;" | spice sql $([ -n "$SPICE_CLOUD_API_KEY" ] && echo "--cloud --api-key $SPICE_CLOUD_API_KEY")
 ```
 
 Example:
@@ -27,7 +34,8 @@ FROM rrf(
     text_search(quality_spec, 'integration test API coverage', content),
     join_key => 'path'
 )
-ORDER BY fused_score DESC;" | spice sql
+ORDER BY fused_score DESC
+LIMIT 10;" | spice sql $([ -n "$SPICE_CLOUD_API_KEY" ] && echo "--cloud --api-key $SPICE_CLOUD_API_KEY")
 ```
 
 ## When to Use Hybrid Search
