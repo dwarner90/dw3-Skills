@@ -1,81 +1,57 @@
-# Skills
+# Expert Skills
 
-AI agent skills for Claude Code and GitHub Copilot.
-
-Each skill queries its corresponding Spec dataset via the Spice CLI to provide expert guidance.
+AI agent skills for Claude Code that query organizational spec datasets via SpiceAI.
 
 ## Available Skills
 
 | Skill | Description | Dataset |
 |-------|-------------|---------|
-| `security-expert` | Security recommendations for HIPAA, HITRUST, SOC2 | `security_spec` |
-| `cloud-expert` | Cloud architecture and infrastructure guidance | `cloud_spec` |
-| `quality-expert` | Quality assurance and testing guidance | `quality_spec` |
-| `ux-design-expert` | UX design recommendations and standards | `ux_design_spec` |
+| `security-expert` | HIPAA, HITRUST, SOC2 compliance guidance | `security_spec` |
+| `cloud-expert` | AWS infrastructure and architecture | `cloud_spec` |
+| `quality-expert` | QA and testing standards | `quality_spec` |
+| `ux-design-expert` | UX design and accessibility | `ux_design_spec` |
 
 ## Requirements
 
-- Spice CLI installed and configured
-- SpiceManager spicepod running (`spice run` in SpiceManager directory)
+- [Spice CLI](https://docs.spiceai.org/getting-started) installed
+- SpiceManager running (`cd SpiceManager && spice run`) OR `SPICE_CLOUD_API_KEY` set
 
 ---
 
-## Setup for Claude Code
+## Installation for Claude Code
 
-Claude Code discovers skills from directories containing a `SKILL.md` file with YAML frontmatter.
+### Option 1: Install from .skill packages (Recommended)
 
-### Installation
-
-**Option 1: Personal skills (available in all projects)**
+Download the `.skill` files from `dist/` and install:
 
 ```bash
-# Create skill directories
-mkdir -p ~/.claude/skills/security-expert
-mkdir -p ~/.claude/skills/cloud-expert
-mkdir -p ~/.claude/skills/quality-expert
-mkdir -p ~/.claude/skills/ux-design-expert
-
-# Copy and convert each skill (add frontmatter)
-for skill in security-expert cloud-expert quality-expert ux-design-expert; do
-  cat > ~/.claude/skills/$skill/SKILL.md << EOF
----
-name: $skill
-description: $(head -1 /path/to/ExpertOrgPOC/Skills/$skill.md | sed 's/# //' | sed 's/ Skill//')
----
-
-$(cat /path/to/ExpertOrgPOC/Skills/$skill.md)
-EOF
-done
+# Personal skills (available in all projects)
+unzip security-expert.skill -d ~/.claude/skills/
+unzip cloud-expert.skill -d ~/.claude/skills/
+unzip quality-expert.skill -d ~/.claude/skills/
+unzip ux-design-expert.skill -d ~/.claude/skills/
 ```
 
-**Option 2: Project-scoped skills (available only in this project)**
+Or for project-scoped skills:
 
 ```bash
-# From the project root
-mkdir -p .claude/skills/security-expert
-# ... repeat for each skill
-
-# Copy with frontmatter as shown above
+# Project skills (available only in this project)
+unzip security-expert.skill -d .claude/skills/
 ```
 
-### SKILL.md Format
+### Option 2: Copy skill directories directly
 
-Each skill file requires YAML frontmatter:
-
-```markdown
----
-name: security-expert
-description: Security expert for HIPAA, HITRUST, and SOC2 compliance
----
-
-# Security Expert Skill
-
-[skill content...]
+```bash
+# Copy from this repo to your Claude skills directory
+cp -r security-expert ~/.claude/skills/
+cp -r cloud-expert ~/.claude/skills/
+cp -r quality-expert ~/.claude/skills/
+cp -r ux-design-expert ~/.claude/skills/
 ```
 
-### Usage
+### Verify Installation
 
-Once installed, skills appear in `/skills` and can be invoked:
+Run `/skills` in Claude Code to see installed skills, or invoke directly:
 
 ```
 /security-expert
@@ -84,37 +60,24 @@ Once installed, skills appear in `/skills` and can be invoked:
 /ux-design-expert
 ```
 
-Claude will also automatically load relevant skills based on conversation context.
-
-### Frontmatter Options
-
-| Option | Description |
-|--------|-------------|
-| `name` | Skill identifier (lowercase, hyphens allowed) |
-| `description` | Brief description shown in skill list |
-| `disable-model-invocation: true` | Only user can invoke (not auto-loaded) |
-| `user-invocable: false` | Only Claude can invoke (background knowledge) |
+Skills also auto-trigger based on conversation context.
 
 ---
 
 ## Setup for GitHub Copilot
 
-GitHub Copilot uses instruction files to customize behavior.
+### Repository Instructions
 
-### Option 1: Repository Instructions (Recommended)
-
-Create a `.github/copilot-instructions.md` file in your repository root:
+Create `.github/copilot-instructions.md` in your repository:
 
 ```markdown
 # Copilot Instructions
 
-## Expert Skills
-
 When asked about security, cloud, quality, or UX topics, use the Spice CLI
-to query the relevant dataset.
+to query the relevant dataset with hybrid RRF search.
 
-### Security Questions
-Use hybrid RRF search on the security_spec dataset:
+## Security Questions
+Query security_spec dataset:
 \`\`\`bash
 echo "SELECT path, content, fused_score
 FROM rrf(
@@ -122,61 +85,68 @@ FROM rrf(
     text_search(security_spec, '<keywords>', content),
     join_key => 'path'
 )
-ORDER BY fused_score DESC;" | spice sql
+ORDER BY fused_score DESC
+LIMIT 10;" | spice sql
 \`\`\`
 
-### Cloud Questions
-Query cloud_spec dataset with hybrid search...
+## Cloud Questions
+Query cloud_spec dataset (same pattern)
 
-### Quality Questions
-Query quality_spec dataset with hybrid search...
+## Quality Questions
+Query quality_spec dataset (same pattern)
 
-### UX Design Questions
-Query ux_design_spec dataset with hybrid search...
+## UX Design Questions
+Query ux_design_spec dataset (same pattern)
 ```
 
-### Option 2: VS Code Workspace Instructions
+### VS Code Workspace Instructions
 
 Add to `.vscode/settings.json`:
 
 ```json
 {
   "github.copilot.chat.codeGeneration.instructions": [
-    {
-      "file": "Skills/security-expert.md"
-    },
-    {
-      "file": "Skills/cloud-expert.md"
-    },
-    {
-      "file": "Skills/quality-expert.md"
-    },
-    {
-      "file": "Skills/ux-design-expert.md"
-    }
+    { "file": "Skills/security-expert/SKILL.md" },
+    { "file": "Skills/cloud-expert/SKILL.md" },
+    { "file": "Skills/quality-expert/SKILL.md" },
+    { "file": "Skills/ux-design-expert/SKILL.md" }
   ]
 }
 ```
 
-### Option 3: Custom Chat Participants (VS Code Extension)
+---
 
-For more advanced integration, create a VS Code extension that registers custom chat participants. See [GitHub Copilot Extensibility](https://docs.github.com/en/copilot/building-copilot-extensions).
+## Skill Structure
 
-### Usage
-
-With repository instructions, Copilot Chat will automatically use the guidance when you ask relevant questions:
+Each skill follows the Claude Code skill format:
 
 ```
-@workspace How should I implement authentication for HIPAA compliance?
+skill-name/
+└── SKILL.md          # Skill definition with YAML frontmatter
 ```
+
+The SKILL.md includes:
+- **Frontmatter**: `name` and `description` (triggers auto-loading)
+- **Query template**: Hybrid RRF search pattern
+- **Workflow**: Steps for synthesizing results
+- **Organization context**: Standards and constraints
 
 ---
 
-## Skill File Reference
+## Building .skill Packages
 
-Each `.md` file in this directory follows this structure:
+To rebuild the distributable packages:
 
-1. **Title** - Skill name and role
-2. **Instructions** - When and how to use the skill
-3. **Commands** - Spice SQL queries with hybrid RRF search
-4. **Behavior** - Step-by-step guidance for the AI
+```bash
+cd Skills
+python3 << 'EOF'
+import zipfile
+from pathlib import Path
+
+for skill in ['security-expert', 'cloud-expert', 'quality-expert', 'ux-design-expert']:
+    with zipfile.ZipFile(f'dist/{skill}.skill', 'w', zipfile.ZIP_DEFLATED) as z:
+        for f in Path(skill).rglob('*'):
+            if f.is_file():
+                z.write(f, f.relative_to(Path(skill).parent))
+EOF
+```
