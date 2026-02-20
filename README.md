@@ -11,8 +11,9 @@ AI agent skills for Claude Code that query organizational spec datasets via Spic
 | `quality-expert` | QA and testing standards | `quality_spec` |
 | `ux-design-expert` | UX design and accessibility | `ux_design_spec` |
 
-## Requirements
+## Prerequisites
 
+- [Claude Code](https://claude.ai/download) installed
 - [Spice CLI](https://docs.spiceai.org/getting-started) installed
 - SpiceManager running (`cd SpiceManager && spice run`) OR `SPICE_CLOUD_API_KEY` set
 
@@ -22,31 +23,39 @@ AI agent skills for Claude Code that query organizational spec datasets via Spic
 
 ### Option 1: Install from .skill packages (Recommended)
 
-Download the `.skill` files from `dist/` and install:
+The `dist/` directory contains pre-packaged `.skill` files.
+
+**Personal skills (available in all projects):**
 
 ```bash
-# Personal skills (available in all projects)
-unzip security-expert.skill -d ~/.claude/skills/
-unzip cloud-expert.skill -d ~/.claude/skills/
-unzip quality-expert.skill -d ~/.claude/skills/
-unzip ux-design-expert.skill -d ~/.claude/skills/
+cd Skills/dist
+
+# Create skills directory if it doesn't exist
+mkdir -p ~/.claude/skills
+
+# Install each skill
+unzip -o security-expert.skill -d ~/.claude/skills/security-expert/
+unzip -o cloud-expert.skill -d ~/.claude/skills/cloud-expert/
+unzip -o quality-expert.skill -d ~/.claude/skills/quality-expert/
+unzip -o ux-design-expert.skill -d ~/.claude/skills/ux-design-expert/
 ```
 
-Or for project-scoped skills:
+**Project-scoped skills (available only in current project):**
 
 ```bash
-# Project skills (available only in this project)
-unzip security-expert.skill -d .claude/skills/
+cd Skills/dist
+mkdir -p .claude/skills
+unzip -o security-expert.skill -d .claude/skills/security-expert/
 ```
 
 ### Option 2: Copy skill directories directly
 
 ```bash
 # Copy from this repo to your Claude skills directory
-cp -r security-expert ~/.claude/skills/
-cp -r cloud-expert ~/.claude/skills/
-cp -r quality-expert ~/.claude/skills/
-cp -r ux-design-expert ~/.claude/skills/
+cp -r Skills/security-expert ~/.claude/skills/
+cp -r Skills/cloud-expert ~/.claude/skills/
+cp -r Skills/quality-expert ~/.claude/skills/
+cp -r Skills/ux-design-expert ~/.claude/skills/
 ```
 
 ### Verify Installation
@@ -60,7 +69,7 @@ Run `/skills` in Claude Code to see installed skills, or invoke directly:
 /ux-design-expert
 ```
 
-Skills also auto-trigger based on conversation context.
+Skills also auto-trigger based on conversation context (e.g., asking about "HIPAA" triggers security-expert).
 
 ---
 
@@ -139,14 +148,46 @@ To rebuild the distributable packages:
 
 ```bash
 cd Skills
+mkdir -p dist
+
+for skill in security-expert cloud-expert quality-expert ux-design-expert; do
+  cd "$skill"
+  zip -r "../dist/${skill}.skill" SKILL.md
+  cd ..
+done
+```
+
+Or using Python:
+
+```bash
+cd Skills
 python3 << 'EOF'
 import zipfile
 from pathlib import Path
 
+Path('dist').mkdir(exist_ok=True)
 for skill in ['security-expert', 'cloud-expert', 'quality-expert', 'ux-design-expert']:
     with zipfile.ZipFile(f'dist/{skill}.skill', 'w', zipfile.ZIP_DEFLATED) as z:
-        for f in Path(skill).rglob('*'):
-            if f.is_file():
-                z.write(f, f.relative_to(Path(skill).parent))
+        skill_file = Path(skill) / 'SKILL.md'
+        if skill_file.exists():
+            z.write(skill_file, 'SKILL.md')
 EOF
 ```
+
+---
+
+## Troubleshooting
+
+### "Skill not found"
+- Verify skill is in `~/.claude/skills/<skill-name>/SKILL.md`
+- Check the SKILL.md has valid YAML frontmatter
+- Restart Claude Code after installing skills
+
+### "spice sql: command not found"
+- Install Spice CLI: `curl https://install.spiceai.org | /bin/bash`
+- Add to PATH if needed
+
+### "Dataset not found" when querying
+- Ensure SpiceManager is running (`cd SpiceManager && spice run`)
+- Or set `SPICE_CLOUD_API_KEY` for cloud mode
+- Wait for initial indexing to complete
